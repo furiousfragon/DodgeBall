@@ -1,0 +1,991 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<style>
+			.ballLook{
+				position: absolute;
+				background: rgb(0,100,150);
+				width: 20px;
+				height: 20px;
+				border-radius: 10px;
+				display: inline	;		
+			}
+			.neutral{
+				position: absolute;
+				background: rgb(200,200,200);
+				width: 20px;
+				height: 20px;
+				border-radius: 10px;
+				display: none	;		
+			}
+			@keyframes changeColor {
+                0%  {background:rgb(115, 217, 142);}
+                
+                50% {background:rgb(35, 135, 62);}
+
+                100% {background:rgb(115, 217, 142);}
+
+                
+            }
+            
+            .ballLook {
+                animation-name: changeColor;
+                animation-duration: 3s;
+                animation-iteration-count: infinite;
+            }
+
+
+<!-- HTML !-->
+
+
+/* CSS */
+.button-77 {
+  background-clip: padding-box;
+  background-color: initial;
+  background-image: none;
+  border-style: none;
+  color: #fff;
+  cursor: pointer;
+  font-family: Eina01,sans-serif;
+  font-size: 16px;
+  font-weight: 800;
+  line-height: 24px;
+  margin: 0;
+  min-height: 64px;
+  outline: none;
+  overflow: visible;
+  padding: 19px 26px;
+  pointer-events: auto;
+  position: relative;
+  text-align: center;
+  text-decoration: none;
+  text-transform: none;
+  user-select: none;
+  -webkit-user-select: none;
+  touch-action: manipulation;
+  vertical-align: middle;
+  width: auto;
+  word-break: keep-all;
+  z-index: 0;
+}
+
+@media (min-width: 768px) {
+  .button-77 {
+    padding: 19px 32px;
+  }
+}
+
+.button-77:before,
+.button-77:after {
+  border-radius: 80px;
+}
+
+.button-77:before {
+  background-color: rgba(249, 58, 19, .32);
+  content: "";
+  display: block;
+  height: 100%;
+  left: 0;
+  overflow: hidden;
+  position: absolute;
+  top: 0;
+  width: 100%;
+  z-index: -2;
+}
+
+.button-77:after {
+  background-color: initial;
+  background-image: linear-gradient(92.83deg, #ff7426 0, #f93a13 100%);
+  bottom: 4px;
+  content: "";
+
+  left: 4px;
+  overflow: hidden;
+  position: absolute;
+  right: 4px;
+  top: 4px;
+  transition: all 100ms ease-out;
+  z-index: -1;
+}
+
+.button-77:hover:not(:disabled):after {
+  bottom: 0;
+  left: 0;
+  right: 0;
+  top: 0;
+  transition-timing-function: ease-in;
+}
+
+.button-77:active:not(:disabled) {
+  color: #ccc;
+}
+
+.button-77:active:not(:disabled):after {
+  background-image: linear-gradient(0deg, rgba(0, 0, 0, .2), rgba(0, 0, 0, .2)), linear-gradient(92.83deg, #ff7426 0, #f93a13 100%);
+  bottom: 4px;
+  left: 4px;
+  right: 4px;
+  top: 4px;
+}
+
+.button-77:disabled {
+  cursor: default;
+  opacity: .24;
+}
+
+
+
+		</style>
+	</head>
+	<body>
+		<div class="neutral" id="balltemplate">
+		</div>
+		<script>
+
+			var height = window.innerHeight;
+			var width = window.innerWidth;
+
+			var requestId =null;
+			var deathText=null;
+			var deathLevel=null;
+			var crateTime=null;
+
+			var homesound=new Audio("./sounds/synth-music-intro.mp3");  
+			var gamesound=new Audio("./sounds/8bit-background-intro-music.mp3");
+			var deadsound=new Audio("./sounds/sad-intro-synth-melody.mp3");  
+			var firstLogIn=true;//this means if the player just got onto page//
+
+			var gameSound=null;
+
+			var character = document.createElement("img");
+
+			var startGameButton = document.createElement("div");
+			startGameButton.setAttribute("class","button-77");
+			var toAvatarButton = document.createElement("div");
+			toAvatarButton.setAttribute("class","button-77");
+			var goHomeButton = document.createElement("div");
+			goHomeButton.setAttribute("class","button-77");
+			var avatarToHome = document.createElement("div");
+			avatarToHome.setAttribute("class","button-77");
+			var autoDieButton = document.createElement("div");
+			autoDieButton.setAttribute("class","button-77");
+
+			var ballGameText = document.createElement("h1");
+			var mysteryCrate = document.createElement("img");
+			mysteryCrate.setAttribute("class","crate");
+			mysteryCrate.src = 'https://cdn.shopify.com/s/files/1/0721/5107/products/box_grande_67f579fe-1928-4836-a8c0-dd74f9beb4fc.png?v=1571273320';
+			var gun = document.createElement("img");
+			var gunCanUse=true;
+			gun.setAttribute("id","gun");
+			gun.src = 'https://oyster.ignimgs.com/mediawiki/apis.ign.com/grand-theft-auto-5/5/58/Ap-pistol.png';
+			var shotPause=false;
+			var bulletCount=0
+			var bullets=[]
+
+			character.style.position="absolute";
+			character.style.background="blue";
+			character.style.height="15px";
+			character.style.width="15px";
+			character.style.left= "100px"
+			character.style.top= "100px"
+
+			var ballCounter = 0;
+			var cBallWait = null;
+			var culdown=null;
+			var makinACrate=null;
+
+
+			var RemoveFromListByDivId = function(theList, theDivId)
+			{
+				var savedObj=null;
+				for(i=0;i<theList.length;i++){
+					console.log("1")
+					if(theList[i].divId===theDivId){
+						savedObj=theList[i]
+						theList.splice(i,1)
+						return savedObj;
+					}
+				}
+
+			}
+
+			var dummyList=[{divId:"1", somevalue:10},{divId:"5", somevalue:2423},{divId:"20", somevalue:1389}]
+			RemoveFromListByDivId(dummyList,"5")
+			console.log(dummyList)
+
+
+			var BallObj = function(){
+				var makeBall=document.getElementById("balltemplate").cloneNode(true)
+				makeBall.style.display="inline";
+				xCoor = randomInteger(0,width);
+				yCoor = randomInteger(0,height);
+				makeBall.style.left = xCoor;
+				makeBall.style.top = yCoor;	
+				document.body.appendChild(makeBall);
+
+				this.moveX = randomInteger(-5,5);
+				this.moveY = randomInteger(-5,5);
+				this.divId = "ball"+ballCounter;
+
+				makeBall.setAttribute("id",this.divId);
+				makeBall.setAttribute("birthDate",Date.now());
+				ballCounter++
+			}
+			BallObj.prototype.move=function(){
+				var aDiv = document.getElementById(this.divId);
+					if(slowDown===true){
+					var divL=parseFloat(aDiv.style.left)+this.moveX/2;
+					var divT=parseFloat(aDiv.style.top)+this.moveY/2;
+					}
+					else{
+						var divL=parseFloat(aDiv.style.left)+this.moveX;
+						var divT=parseFloat(aDiv.style.top)+this.moveY;
+					}
+					aDiv.style.left = divL+"px";
+					aDiv.style.top = divT+"px";
+
+					if(divT>=height){
+						aDiv.style.top = height+"px";
+						this.moveY=-this.moveY;
+					}
+					if(divT<=0){
+						aDiv.style.top=0+"px";
+						this.moveY=-this.moveY;
+					}
+					if(divL>=width){
+						aDiv.style.left = width+"px";
+						this.moveX=-this.moveX;
+					}
+					if(divL<=0){
+						aDiv.style.left=0+"px";
+						this.moveX=-this.moveX;
+					}
+			}
+			var BulletObj = function(){
+				bulletCount++
+				this.divId="bullet"+bulletCount
+				this.bulletNum=bulletCount
+
+				var moveX=charDirectR-charDirectL;
+				var moveY=charDirectB-charDirectT;
+
+				if(moveX===0 && moveY===0){
+					this.moveBulletL=charDirectPreL
+					this.moveBulletR=charDirectPreR
+					this.moveBulletT=charDirectPreT
+					this.moveBulletB=charDirectPreB
+				}
+				else{
+					this.moveBulletL=charDirectL
+					this.moveBulletR=charDirectR
+					this.moveBulletT=charDirectT
+					this.moveBulletB=charDirectB
+					charDirectPreB=charDirectB
+					charDirectPreT=charDirectT
+					charDirectPreR=charDirectR
+					charDirectPreL=charDirectL
+				}
+				var aBullet = document.createElement("div")
+				aBullet.style.background="red"
+				aBullet.style.width="4px"
+				aBullet.style.height="4px"
+				aBullet.setAttribute("id",this.divId)
+				document.body.appendChild(aBullet)
+				aBullet.style.position="absolute"
+				aBullet.style.left=character.style.left;
+				aBullet.style.top=character.style.top;
+			}
+			//how to remove item from list
+			//none style thingy
+			//delete obj
+			BulletObj.prototype.move=function(){
+				var aBullet=document.getElementById(this.divId)
+				if(aBullet.style.display==="none"){
+					return
+				}
+				divL=(parseFloat(aBullet.style.left)+(this.moveBulletR-this.moveBulletL)*2)+"px";
+				divT=(parseFloat(aBullet.style.top)+(this.moveBulletB-this.moveBulletT)*2)+"px";
+				aBullet.style.left=divL
+				aBullet.style.top=divT
+				var bulletX=(parseFloat(aBullet.style.left))
+				var bulletY=(parseFloat(aBullet.style.top))
+				if(bulletX>width||bulletY>height||bulletX<0||bulletY<0){
+					aBullet.style.display="none"
+					//var removedBullet=bullets.splice(1,1)
+					//delete removedBullet
+				}
+			}
+			var balls = [];
+
+			var keyState =  0;
+			var keyU =  false;
+			var keyD =  false;
+			var keyL =  false;
+			var keyR =  false;
+			var charDirectL = 0;
+			var charDirectT = 0;
+			var charDirectR = 0;
+			var charDirectB = 0;
+			var charDirectPreL = 0;
+			var charDirectPreT = 0;
+			var charDirectPreR = 0;
+			var charDirectPreB = 0;
+
+			var lives = 3;
+			var slowDown=false;
+			var cooldown = false;
+			var youDed = false;
+
+			var avatarDisplayY=8;
+			var avatarDisplayX=5;
+
+			var gameState = "home";
+			var avatarIds=["./images/0000FF.jpeg", "./images/800px-Happy_smiley_face.png", "./images/dragon-icon.png", "./images/poop-emoji-png-42521.png","./images/1456483662-pikachujpg.png"];
+
+			var hearts = document.createElement("div");
+			document.body.appendChild(hearts);
+			hearts.style.display="none";
+			var ballCountEl = document.createElement("div");
+			document.body.appendChild(ballCountEl);
+			ballCountEl.style.display="none";
+
+			for(i=0;i<avatarIds.length;i++){
+				var avatar=document.createElement("img");
+				avatar.setAttribute("id","avatar"+i);
+				avatar.src=avatarIds[i];
+				document.body.appendChild(avatar);
+					avatar.style.display="none";
+					avatar.style.position="absolute";
+					avatar.style.top=avatarDisplayY+"%";
+  					avatar.style.left=avatarDisplayX+"%";
+  					avatar.style.transform="translate(-50%, -50%)";
+  					avatar.style.background="transparent";
+  					if(avatar.id==="avatar0"){
+  						avatar.style.background="blue";
+  					}
+  					avatar.style.width="80";
+  					avatar.style.height="80";
+  					avatarDisplayX+=9;
+			}
+
+			var noCooldown = function(){
+				cooldown=false;
+			}
+			var bulletStopPause =function(){
+				shotPause=false;
+			}
+			window.addEventListener('resize', 
+				function(event)	{
+			  		height = window.innerHeight;
+			  		width = window.innerWidth;
+				}
+			);
+			function randomInteger(min, max) {
+  				return Math.floor(Math.random() * (max - min + 1)) + min;
+  				
+			}
+			var loadFonts=function(){
+				newFont=new FontFace("deathFont", 'url(jolyDeath.ttf)')
+				newFont.load().then(function(the_loaded_font_parameter){
+					document.fonts.add(the_loaded_font_parameter)
+				}).catch(function(error){
+				});
+			}
+			var youDied = function(){
+				document.body.style.background = "red";	
+				deathText = document.createElement("div");
+				deathLevel = document.createElement("div");
+				deathText.style.position = "absolute";
+				deathText.style.color = "orange";
+				deathText.style.top="35%";
+  				deathText.style.left="50%";
+  				deathText.style.transform="translate(-50%, -50%)";
+				deathText.style.fontSize = "200px";
+				deathText.style.textAlign = "center"
+				deathText.style.fontFamily="deathFont";
+				deathText.style.zindex="1000";
+				document.body.appendChild(deathText);
+				deathText.innerHTML = "YOU DIED";
+				deathLevel.style.position = "absolute";
+				deathLevel.style.fontSize ="100px";
+				deathLevel.style.color = "orange";
+				deathLevel.innerHTML = "with "+balls.length+" balls!";
+				deathLevel.style.top="80%";
+  				deathLevel.style.left="50%";
+  				deathLevel.style.textAlign="center";
+  				deathLevel.style.transform="translate(-50%, -50%)";
+  				document.body.appendChild(deathLevel);
+  			}
+  			var normalBallSpeed=function(){
+  				slowDown=false;
+  			}
+			var wBackgroud = function(){
+				document.body.style.background = "white"
+			}
+			var healed = function(){
+				document.body.style.background = "green"
+				setTimeout(wBackgroud,500);
+			}
+			var youHurt = function(){
+				document.body.style.background = "red";
+				setTimeout(wBackgroud,500);
+			}
+			function isCollision(x1, y1, w1, x2, y2, w2) {
+				if (x1 < x2 + w2 &&
+						x1 + w1 > x2 &&
+						y1 < y2 + w2 &&
+						w1 + y1 > y2) {
+						return true;
+				}
+				return false;
+			}
+			var detectBulletCollision = function(){
+				for(var i=0;i<balls.length;i++){
+					var aBall =document.getElementById(balls[i].divId)
+					var ballx = parseInt(aBall.style.left);
+					var bally = parseInt(aBall.style.top);
+					var bah = parseInt(aBall.style.height);
+
+					for(var x=0;x<bullets.length;x++){
+
+						var aBullet=document.getElementById(bullets[x].divId)
+						var bulletx = parseInt(aBullet.style.left);
+						var	bullety = parseInt(aBullet.style.top);
+						var buh = parseInt(aBullet.style.height);
+						
+						var adjust=5
+						if(isCollision(ballx+adjust,bally+adjust,20,bulletx,bullety,buh) && aBall.style.display!=="none" && aBullet.style.display!=="none"){
+							
+							aBall.style.display="none"
+							aBullet.style.display="none"
+						}
+					}
+				}
+			}
+			var findAllCrash = function(){
+
+				if(cooldown===true){
+					return
+				}
+				for(i=0;i<balls.length;i++){
+
+					var	divEl = document.getElementById(balls[i].divId);
+					var bally = parseInt(divEl.style.top);
+					var	ballx = parseInt(divEl.style.left);
+					var characterx = parseInt(character.style.left);
+					var charactery = parseInt(character.style.top);
+					var cs = parseInt(character.style.height);
+					var bs = parseInt(divEl.style.height);
+					var divClass = divEl.getAttribute("class");
+
+					
+					var adjust=5
+					if(isCollision(ballx+adjust,bally+adjust,20,characterx+adjust,charactery+adjust,cs-adjust*2)){
+
+						if(divClass==="neutral"){
+
+							return
+						}
+						lives-=1;
+						
+						if(lives===0){
+							youDied();
+							gameState="dead";
+							changeState();
+						} else {
+							youHurt();
+							cooldown=true;
+							culdown=setTimeout(noCooldown,1000);
+							heartsAndBalls();
+						}
+						break
+					};
+					
+				};
+			};
+			var detectCrateCollision = function(){
+					var cratex = parseInt(mysteryCrate.style.left);
+					var	cratey = parseInt(mysteryCrate.style.top);
+					var characterx = parseInt(character.style.left);
+					var charactery = parseInt(character.style.top);
+					var cs = parseInt(character.style.height);
+					var crs = parseInt(mysteryCrate.style.height);
+
+					var adjust=15
+					if(isCollision(cratex+adjust,cratey+adjust,crs-2*adjust,characterx+5,charactery+5,cs-10)){
+						if(mysteryCrate.style.display==="none"){
+							return
+						}
+						var rewardChooser = randomInteger(1,2);
+							if(rewardChooser===1){
+								slowDown=true;
+								setInterval(normalBallSpeed,10000);
+							}
+							else if(rewardChooser===2){
+								gun.style.height="13px";
+								gun.style.position = "absolute";
+								document.body.appendChild(gun)
+								//gunCanUse=true;
+							}
+						mysteryCrate.style.display="none"
+					
+					}
+			}
+			var makeCrate = function(){
+				mysteryCrate.style.display="inline";
+				mysteryCrate.src = 'https://static.wixstatic.com/media/695ec8_af80b36dbcb941859f432fde013d432e~mv2.png/v1/fit/w_500,h_500,q_90/file.png';
+				mysteryCrate.style.width="90";
+				mysteryCrate.style.height="90";
+				mysteryCrate.style.position="absolute";
+				document.body.appendChild(mysteryCrate);
+				crateX = randomInteger(0,width);
+				crateY = randomInteger(0,height);
+				mysteryCrate.style.left = crateX;
+				mysteryCrate.style.top = crateY;	
+			}
+			function onKeyDown(event){
+				if(event.keyCode == 32){
+					if(gunCanUse===true){
+						if(shotPause===false){
+							createBullet()
+							shotPause=true;
+							setTimeout(bulletStopPause,100)
+
+						}
+					}	
+				}
+				
+				if(event.keyCode>=37 || event.keyCode<=40){
+					event.stopPropagation();
+					event.preventDefault();
+				}
+				if (event.keyCode == 37) {
+					charDirectL=5
+					keyL = true	  
+					
+				    }
+				else if (event.keyCode == 39) {
+					charDirectR=5
+					keyR = true 
+				    
+				    }
+				else if (event.keyCode == 38) {
+					charDirectT=5
+					keyU = true	  
+				   
+				    }
+				else if (event.keyCode == 40) {
+					charDirectB=5
+					keyD = true	 
+					}
+					
+				
+			}
+			function onKeyUp(event){
+				if(event.keyCode>=37 || event.keyCode<=40){
+					event.stopPropagation();
+					event.preventDefault();
+				}
+				if (event.keyCode == 37) {
+					charDirectL=0
+					keyL = false;
+				}
+				else if (event.keyCode == 39) {
+					charDirectR=0
+					keyR = false;
+				}
+				else if (event.keyCode == 38) {
+					charDirectT=0
+					keyU = false;
+				}
+				else if (event.keyCode == 40) {
+					charDirectB=0
+					keyD = false;
+				}
+			}
+
+			function confirmAction() {
+				let confirmAction = confirm("Are you sure you want to go home");
+				if (confirmAction) {
+					var ballElements = document.getElementsByClassName("ballLook");
+					while (ballElements[0]) {
+						ballElements[0].parentNode.removeChild(ballElements[0]);
+					}
+					ballElements = document.getElementsByClassName("balltemplate");
+					while (ballElements[0]) {
+						ballElements[0].parentNode.removeChild(ballElements[0]);
+					}
+					ballCounter=0;
+
+					balls=[];
+					deathText.style.display="none";
+					deathLevel.style.display="none";
+					document.body.removeChild(character);
+					goHomeButton.style.display = "none";
+					document.body.style.background="white";
+					gameState="home";
+					changeState();
+				} else {
+					return
+				}
+			}
+		    
+		    var FATH = function(){
+		    	//from avatar to home
+		    	for(i=0;i<avatarIds.length;i++){
+		    		var avatar =document.getElementById("avatar"+i);
+		    		avatar.style.display="none";
+		    	}
+		    	avatarToHome.style.display="none";
+		    	gameState="home";
+		    	changeState();
+		    }
+		    function nAvatar(event){
+		    	var theChosenAvatar = event.target.getAttribute("id");
+		    	for(i=0;i<avatarIds.length;i++){
+		    		var avatarNum= document.getElementById("avatar"+i);
+		    		avatarNum.style.border="none";
+		    	}
+		    	for(i=0;i<avatarIds.length;i++){
+		    		var avatar = document.getElementById(theChosenAvatar);
+		    		if(theChosenAvatar==="avatar"+i){
+		    			character.src=avatarIds[i];
+			    		character.style.background="transparent";
+			    		avatar.style.border="thick solid black";
+		    		}
+
+		    	}
+		    }
+		    var die = function(){
+		    	lives=0;
+		    	youDied();
+		    	gameState="dead";
+		    	changeState();
+		    }
+		    var heartsAndBalls = function(){
+		    	hearts.style.display="inline";
+		    	ballCountEl.style.display="inline";
+
+		    	hearts.innerHTML="Lives:  "+lives;
+		    	ballCountEl.innerHTML="Balls:  "+ballCounter;
+
+		    	hearts.style.position = "absolute";
+				hearts.style.top="2%";
+  				hearts.style.left="45%";
+  				hearts.style.transform="translate(-50%, -50%)";
+
+  				ballCountEl.style.position = "absolute";
+					ballCountEl.style.top="2%";
+  				ballCountEl.style.left="55%";
+  				ballCountEl.style.transform="translate(-50%, -50%)";
+		    }
+			var startGame = function(){
+				startGameButton.style.display = "none";
+				ballGameText.style.display = "none";
+				toAvatarButton.style.display = "none";
+				document.body.style.background="white";
+				gameState="startGame";
+				changeState();
+			}
+			var goHome = function(){
+				confirmAction();
+			}
+			var toAvatarScreen = function(){
+				startGameButton.style.display = "none";
+				ballGameText.style.display = "none";
+				toAvatarButton.style.display = "none";
+				gameState="avatarStore";
+				changeState();
+			}
+
+			/*var sounds = function(){
+				if (gameState==="home"|| gameState==="avatarStore"){
+					if (homesound===null){
+      			homesound = new Audio("./sounds/synth-music-intro.mp3");  
+        		homesound.play();
+        		return
+      		}
+      		else if(homesound.currentTime<=16.326525){
+      			return
+      		}
+					homesound = new Audio("./sounds/synth-music-intro.mp3");  
+        	homesound.play();
+      	}
+      	if (gameState==="startGame") {
+      		if (gamesound===null){
+      			gamesound = new Audio("./sounds/8bit-background-intro-music.mp3");  
+        		gamesound.play();
+        		return
+      		}
+      		else if(gamesound.currentTime){
+      			return
+      		}
+      		gamesound = new Audio("./sounds/8bit-background-intro-music.mp3");  
+        	gamesound.play();
+
+      	}
+      	if(gameState==="dead"){
+      		if (deadsound===null){
+      			deadsound = new Audio("./sounds/sad-intro-synth-melody.mp3");  
+        		deadsound.play();
+        		return
+      		}
+      		else if(deadsound.currentTime){
+      			return
+      		}
+      		firstLogIn=false;
+      		deadsound = new Audio("./sounds/sad-intro-synth-melody.mp3");  
+        	deadsound.play();
+      	}
+			}*/
+			var changeState = function(){
+
+				if(gameState==="home"){
+					if(firstLogIn===false){
+      			deadsound.loop = false;
+      		}
+      		homesound.loop = true;
+					balls=[];
+					document.body.style.background="rgb(34, 174, 199)";
+					startGameButton.style.display = "inline";
+					ballGameText.style.display = "inline";
+					toAvatarButton.style.display="inline";
+					startGameButton.innerHTML= "Play!";
+					document.body.appendChild(startGameButton);
+					startGameButton.style.color="white";
+					startGameButton.style.textAlign="center";
+					startGameButton.style.position = "absolute";
+					startGameButton.style.top="40%";
+  					startGameButton.style.left="50%";
+  					startGameButton.style.transform="translate(-50%, -50%)";
+  					startGameButton.style.height="75";
+  					startGameButton.style.width="400";
+  					startGameButton.style.fontSize="50";
+  					startGameButton.style.fontFamily="Arial";
+
+  					toAvatarButton.innerHTML="Avatar";
+  					document.body.appendChild(toAvatarButton);
+					toAvatarButton.style.color="white";
+					toAvatarButton.style.textAlign="center";
+					toAvatarButton.style.position = "absolute";
+					toAvatarButton.style.top="60%";
+  					toAvatarButton.style.left="50%";
+  					toAvatarButton.style.transform="translate(-50%, -50%)";
+  					toAvatarButton.style.height="75";
+  					toAvatarButton.style.width="400";
+  					toAvatarButton.style.fontSize="50";
+  					toAvatarButton.style.fontFamily="Arial";
+
+  					ballGameText.innerHTML = "DodgeBall!";
+  					document.body.appendChild(ballGameText);
+					ballGameText.style.position = "absolute";
+					ballGameText.style.top="7%";
+  					ballGameText.style.left="42%";
+  					ballGameText.style.transform="translate(-50%, -50%)";
+  					ballGameText.style.height = "75";
+  					ballGameText.style.width="300";
+  					ballGameText.style.fontSize = "100";
+  					ballGameText.style.fontFamily="Arial"
+				}
+				else if(gameState==="avatarStore"){
+					document.body.style.background="yellow";
+					for(i=0;i<avatarIds.length;i++){
+						var avatar = document.getElementById("avatar"+i);
+						avatar.style.display="inline";
+					}
+  					avatarToHome.innerHTML="Home";
+  					document.body.appendChild(avatarToHome);
+  					avatarToHome.style.display="inline";
+  					avatarToHome.style.position="absolute";
+  					avatarToHome.style.textAlign="center";
+  					avatarToHome.style.color="white";
+					avatarToHome.style.top="90%";
+  					avatarToHome.style.left="90%";
+  					avatarToHome.style.transform="translate(-50%, -50%)";
+  					avatarToHome.style.width="100";
+  					avatarToHome.style.height="50";
+				}
+				else if(gameState==="startGame"){
+					homesound.loop = false;
+					gamesound.loop = true;
+					lives=3;
+					createCharacter();
+					makinACrate=setInterval(makeCrate,25000);
+					cBallWait = setInterval(createBall,2000);
+					setInterval(findGray,500);
+					moveAball();
+					heartsAndBalls();
+
+					document.body.appendChild(autoDieButton);
+					autoDieButton.innerHTML="AutoDie :|"
+					autoDieButton.style.display = "inline";
+					autoDieButton.style.position="absolute";
+					autoDieButton.style.height="5"
+					autoDieButton.style.width="20"
+					autoDieButton.style.top="5%";
+  					autoDieButton.style.left="50%";
+  					autoDieButton.style.fontSize="7";
+  					autoDieButton.style.fontFamily="Arial";
+  					autoDieButton.style.color="white";
+  					autoDieButton.style.transform="translate(-50%, -50%)";
+  					autoDieButton.style.textAlign="center";
+				}
+				else if(gameState==="dead"){
+					gamesound.loop = false;
+					deadsound.loop = true;
+					clearInterval(cBallWait);
+					clearInterval(culdown);
+					clearInterval(makinACrate);
+					autoDieButton.style.display="none";
+					mysteryCrate.style.display="none";
+					hearts.style.display="none";
+					ballCountEl.style.display="none";
+					goHomeButton.innerHTML="Home";
+					document.body.appendChild(goHomeButton);
+					goHomeButton.style.display = "inline";
+					goHomeButton.style.position="absolute";
+					goHomeButton.style.height="25"
+					goHomeButton.style.width="75"
+					goHomeButton.style.top="90%";
+  					goHomeButton.style.left="90%";
+  					goHomeButton.style.fontSize="15";
+  					goHomeButton.style.fontFamily="Arial";
+  					goHomeButton.style.color="white";
+  					goHomeButton.style.transform="translate(-50%, -50%)";
+  					goHomeButton.style.textAlign="center";
+  				}
+				
+			}
+			var visChange = function() {
+			  if (document.visibilityState === 'hidden') {
+			  	clearInterval(cBallWait);
+			  	clearInterval(makinACrate);
+			  	window.cancelAnimationFrame(requestId);
+			  	requestId=null;
+			  }
+			  else if(document.visibilityState ==='visible'){
+			  	if(gameState==="startGame"){
+			  	cBallWait = setInterval(createBall,2000);
+			  	makinACrate=setInterval(makeCrate,25000)
+			  	moveAball();
+			  	}
+			  }
+			};
+
+
+
+			var findGray = function(){
+					ballArray=document.getElementsByClassName("neutral");
+
+					for(i=0 ; i<ballArray.length ; i++){
+						
+						if(ballArray[i].id=="balltemplate") continue;
+
+						neutralBall=ballArray[i];
+						objectsBirth = neutralBall.getAttribute("birthDate");
+						currentDate = Date.now();
+						if(currentDate - objectsBirth >=2000){
+							neutralBall.classList.remove("neutral");
+							neutralBall.setAttribute("class", "ballLook");
+						}
+					}
+			}
+			var createCharacter = function(){
+				document.body.appendChild(character);
+			}
+
+			var createBall = function(){
+				heartsAndBalls();
+				var aBall = new BallObj();
+				balls.push(aBall)
+				
+			}
+			var createBullet = function(){
+				var aBullet = new BulletObj();
+				bullets.push(aBullet)
+
+			}
+			var moveAball = function(){
+				if(gameState!="startGame") return;
+				if(keyR){
+					character.style.left = (parseFloat(character.style.left)+5)+"px";
+					var charR = parseInt(character.style.left);
+					if(charR >= width-15){
+						character.style.left = width-15+"px";
+					}
+				}
+				if(keyL){
+					character.style.left = (parseFloat(character.style.left)-5)+"px";
+					var charL = parseInt(character.style.left);
+					if(charL <= 0){
+						character.style.left = "0px";
+					}
+				}
+				if(keyU){
+					character.style.top = (parseFloat(character.style.top)-5)+"px";
+					var charT = parseInt(character.style.top);
+					if(charT <= 0){
+						character.style.top = "0px";
+					}
+				}
+				if(keyD){
+					character.style.top = (parseFloat(character.style.top)+5)+"px";
+					var charD = parseInt(character.style.top);
+					if(charD >= height-15){
+						character.style.top = height-15+"px";
+					}
+				}
+
+				if(gunCanUse===true){
+					gun.style.left=character.style.left;
+					gun.style.top=character.style.top;
+				}
+
+				for(var i=0; i<balls.length; i++) {
+					balls[i].move();
+				}
+				for(var i=0;i<bullets.length;i++){
+					bullets[i].move();
+				}
+				findAllCrash();
+				detectCrateCollision();
+				detectBulletCollision();
+				requestId =window.requestAnimationFrame(moveAball);
+			};
+
+/*Main Code here*/
+
+		  document.addEventListener('keydown', onKeyDown)
+			document.addEventListener('keyup',onKeyUp)
+			document.addEventListener("visibilitychange", visChange);	
+
+			for(i=0;i<avatarIds.length;i++){
+				var avatar = document.getElementById("avatar"+i);
+				avatar.addEventListener("click",nAvatar);
+			}
+			avatarToHome.addEventListener("click",FATH);
+			autoDieButton.addEventListener("click",die);
+			startGameButton.addEventListener("click",startGame);
+			toAvatarButton.addEventListener("click",toAvatarScreen);
+			goHomeButton.addEventListener("click",goHome);
+
+			//ball scare mode(invisballs that only apear when 50 px or so close)
+			//mixpanel
+			//different ball speeds and level types
+			//highscore
+			//sound affects!
+			//a continue but no score
+			//restart 15 balls ago
+			//homescreen has hardcore and normal modes maybe coustom character also
+			//set interval= no use request animimation frame
+			//add powerup crates and different level types
+			//gun power up where you can shoot with 3 second wait time for 20 seconds
+			//plus one heart and invisiblity which is for 10 seconds
+			//different sized balls
+			//nuke that when used destroys all balls but for 30 second the next few balls are weird ex: faster, bigger, GREEN
+			loadFonts();
+			changeState();
+		</script>
+		<script src="https://replit.com/public/js/replit-badge.js" theme="blue" defer></script> 
+	</body>
+</html> 
